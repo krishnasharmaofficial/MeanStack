@@ -168,6 +168,8 @@ export class BookService {
   }
 }
 
+
+
 /////////////////////////bookcomponent.html////////////////////
 
 <h1>Sapna Book House</h1>
@@ -202,4 +204,69 @@ export class BookService {
 </div>
 
 
-/////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////Mongo.js(OPTIONAL)///////////////////////
+
+var app = require('express')();
+var mongo = require('mongodb').MongoClient;
+var parser = require("body-parser");
+
+app.use(parser.urlencoded({"extended": true}));
+
+app.use(parser.json());
+
+app.use((req, res, next)=>{
+	res.header("Access-Control-Allow-Origin", "*");
+	res.header("Access-Control-Allow-Methods", "GET,PUT, POST, DELETE");
+	res.header("Access-Control-Allow-Headers", "*");
+	next();
+});
+
+let url = 'mongodb://localhost/student';
+var db2;
+
+
+    function getConnection(){
+        mongo.connect(url, (err, database)=>{
+        db2 = database.db("student");	
+        });
+    }
+
+
+getConnection();
+
+//REST services
+app.get("/",(req,res)=>{
+    if(db2){
+         db2.collection('StudenDatabase').find().toArray((e,r)=>{
+             //if(e) console.log(e);
+            res.send(r);
+        })
+    }
+});
+app.get("/:id",(req,res)=>{
+    var sId = parseInt(req.params.id);
+    var finder = {"id":sId};
+    db2.collection('StudentDatabase').find(finder).toArray((e,r)=>{
+        res.send(r);
+    });
+});
+app.post("/",(req,res)=>{
+    var data = req.body;
+    db2.collection('StudentDatabase').insert(data);
+    var msg = {"message":"Successfully Inserted"};
+    res.send(msg);
+});
+
+app.put("/",(req,res)=>{
+    var data = req.body;
+    var finder = {'id':data.id};
+    var setter = {'name':data.name}
+    db2.collection("StudentDatabase").update(finder,{$set:setter});
+    var msg = {"message":"Successfully Updated"};
+    res.send(msg);
+})
+app.listen(1234,()=>{
+    console.log('Server Started...');
+})
+
+//////////////////////////////////////////////////////////////////
