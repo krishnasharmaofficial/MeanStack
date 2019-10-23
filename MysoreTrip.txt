@@ -1,0 +1,205 @@
+/////////////////////////////////mySql.js//////////////////////////////////////
+
+var app = require("express")();
+var util = require("util");
+var parser = require("body-parser");
+
+app.use(parser.urlencoded({extended:true}));
+app.use(parser.json());//POSTED body will be provided as JSON object....
+
+app.use((req, res, next)=>{
+	res.header("Access-Control-Allow-Origin", "*");
+	res.header("Access-Control-Allow-Methods", "GET,PUT, POST, DELETE");
+	res.header("Access-Control-Allow-Headers", "*");
+	//Enable CORS to UR REST SERVICE....	
+	next();
+})
+
+
+//creating a Connection to the database....
+function getConnection(){
+	var sql = require("mysql");//npm install --save mysql...
+	var config = {
+		server : 'localhost',
+		database :'bookstore',
+		user:'root',
+		password:''
+	};
+	var con = sql.createConnection(config);
+	return con;
+}
+
+////REST Services:GET, POST, PUT and DELETE////////////////
+app.get('/', (req, res)=>{
+	var query = "SELECT * FROM bookstore ORDER BY id"
+	var con = getConnection();
+	con.query(query, (err, results, fields)=>{
+		res.send(JSON.stringify(results));
+	})
+})
+
+app.get('/:id', (req, res)=>{
+	var id = req.params.id;
+	//console.log(id);
+	var query = "select * from bookstore where id=" + id;
+	var con = getConnection();
+	con.query(query, (err, results, fields)=>{
+		res.send(JSON.stringify(results));
+	})
+})
+
+app.post("/", (req, res)=>{
+	var data = req.body;
+	console.log(data);
+	var query = util.format("Insert into bookstore values(%d, '%s', %d)", data.id, data.title, data.price);
+	var con = getConnection();
+	con.query(query, (err, results, fields)=>{
+		if(err) res.send(JSON.stringify(err));
+		res.send("Inserted successfully");
+	})
+})
+
+app.delete("/:id",(req, res)=>{
+	var id = req.params.id;
+	var query = "DELETE FROM bookstore where id =" + id;
+	var con = getConnection();
+	con.query(query, (err, results,fields)=>{
+		if(err) res.send(JSON.stringify(err));
+		res.send("Deleted successfully");
+	})
+})
+
+app.listen(3000, ()=>{
+	console.log("server is at 1234");
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+///////////////////////////////////Bookcomponent.ts//////////////////////////////
+
+import { Component, OnInit } from '@angular/core';
+import { BookService } from "../../Services/book.service";
+
+@Component({
+  selector: 'app-book',
+  templateUrl: './book.component.html',
+  styleUrls: ['./book.component.css']
+})
+export class BookComponent implements OnInit {
+  allBooks: any;
+  selectedBook: any;
+  id:number=0;
+  title:string='';
+  price:number=0;
+
+  constructor(private service:BookService) { }
+
+  ngOnInit() {
+    this.service.getAll().subscribe((res)=>this.allBooks=res);
+  }
+
+  addBook(){
+    let newBook = {
+      id:this.id,
+      title:this.title,
+      price:this.price
+    }
+    this.service.postBook(newBook).subscribe((res)=>{
+      alert(res);
+      console.log(res);
+    })
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+////////////////////////////////bookservices.ts/////////////////////////////
+
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class BookService {
+  url:string="http://localhost:3000";
+  constructor(private http:HttpClient) { }
+
+  getAll():any{
+    return this.http.get(this.url);
+  }
+
+  find(id):any{
+    let tUrl = this.url+'/'+id;
+    return this.http.get(tUrl);
+  }
+
+  postBook(newBook): any{
+    return this.http.post(this.url,newBook);
+  }
+  
+  delete(id): any{
+    let tUrl = this.url+'/'+id;
+    return this.http.delete(tUrl);
+  }
+}
+
+/////////////////////////bookcomponent.html////////////////////
+
+<h1>Sapna Book House</h1>
+<hr />
+<div>
+  <h1>List of Books</h1>
+  <input [(ngModel)]="filter" class="search" type="search" placeholder="Search Title" />
+  <table border="1" width="100%">
+    <tr>
+      <th>BookID</th>
+      <th>BookTitle</th>
+      <th>BookPrice</th>
+      <th>Option</th>
+    </tr>
+    <tr *ngFor="let item of allBooks">
+      <td>{{ item.id }}</td>
+      <td>{{ item.title }}</td>
+      <td>{{ item.price }}</td>
+      <td>
+        <a href="#" (click)="delete(item.id)">Delete</a>
+        <a href="#" (click)="edit(item.id)">Edit</a>
+      </td>
+    </tr>
+  </table>
+</div>
+<div>
+  <h1>New Book Registration</h1>
+  <p><input placeholder="BookID" [(ngModel)]="id" name="hello" /></p>
+  <p><input placeholder="BookTitle" [(ngModel)]="title" name="hello" /></p>
+  <p><input placeholder="BookPrice" [(ngModel)]="price" name="hello" /></p>
+  <button (click)="addBook()">Add Book</button>
+</div>
+
+
+/////////////////////////////////////////////////////////////////////////////////
