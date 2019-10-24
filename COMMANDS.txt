@@ -1,0 +1,27 @@
+
+NODE
+
+npm i express --save
+
+npm i mysql/mongo --save
+
+npm init
+
+node filename.js
+
+
+
+
+/// ANGULAR ///
+
+ng g components Components\name
+
+ng g class Classes\name
+
+ng g services Services\name
+npm i g @angular/cli
+
+
+ng new filename
+
+ ng serve --o
